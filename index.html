@@ -2,18 +2,39 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Minecraft Ultra Engine</title>
+<title>Minecraft Ultra Web</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <style>
-body { margin:0; overflow:hidden; background:black; }
+body { margin:0; overflow:hidden; font-family:sans-serif; }
+
 #crosshair {
   position:fixed;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
   color:white;
-  font-size:22px;
+  font-size:20px;
+}
+
+#hotbar {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+}
+
+.slot {
+  width:50px;
+  height:50px;
+  border:2px solid #999;
+  background:#222;
+}
+
+.selected {
+  border:2px solid yellow;
 }
 </style>
 </head>
@@ -22,8 +43,7 @@ body { margin:0; overflow:hidden; background:black; }
 
 <canvas id="game"></canvas>
 <div id="crosshair">+</div>
+<div id="hotbar"></div>
 
-<script type="module" src="./main.js"></script>
-
-</body>
+<script type="module</body>
 </html>
