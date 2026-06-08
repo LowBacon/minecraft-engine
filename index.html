@@ -2,39 +2,18 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Minecraft Ultra Web</title>
+<title>Minecraft Lite (Working)</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
-body { margin:0; overflow:hidden; font-family:sans-serif; }
-
+body { margin:0; overflow:hidden; background:black; }
 #crosshair {
   position:fixed;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
   color:white;
   font-size:20px;
-}
-
-#hotbar {
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:8px;
-}
-
-.slot {
-  width:50px;
-  height:50px;
-  border:2px solid #999;
-  background:#222;
-}
-
-.selected {
-  border:2px solid yellow;
 }
 </style>
 </head>
@@ -43,7 +22,147 @@ body { margin:0; overflow:hidden; font-family:sans-serif; }
 
 <canvas id="game"></canvas>
 <div id="crosshair">+</div>
-<div id="hotbar"></div>
 
-<script type="module</body>
+<script>
+// ================== SETUP ==================
+
+const canvas = document.getElementById("game");
+const renderer = new THREE.WebGLRenderer({canvas});
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth/window.innerHeight,
+  0.1,
+  1000
+);
+
+// light
+scene.add(new THREE.AmbientLight(0xffffff,0.7));
+const sun = new THREE.DirectionalLight(0xffffff,1.2);
+sun.position.set(50,100,50);
+scene.add(sun);
+
+// ================== PLAYER ==================
+
+const player = {
+  pos: new THREE.Vector3(0,50,0),
+  vel: new THREE.Vector3(),
+  grounded:false
+};
+
+let keys = {};
+let yaw = 0;
+let pitch = 0;
+
+window.addEventListener("keydown",e=>keys[e.code]=true);
+window.addEventListener("keyup",e=>keys[e.code]=false);
+
+// mouse look
+canvas.onclick=()=>canvas.requestPointerLock();
+
+document.addEventListener("mousemove",e=>{
+  if(document.pointerLockElement !== canvas) return;
+
+  yaw -= e.movementX * 0.002;
+  pitch -= e.movementY * 0.002;
+
+  pitch = Math.max(-1.5,Math.min(1.5,pitch));
+
+  camera.rotation.set(pitch,yaw,0,"YXZ");
+});
+
+// ================== WORLD ==================
+
+const blocks = [];
+const size = 30;
+
+function getHeight(x,z){
+  return Math.floor(20 + Math.sin(x*0.2)*3 + Math.cos(z*0.2)*3);
+}
+
+const geo = new THREE.BoxGeometry(1,1,1);
+const mat = new THREE.MeshLambertMaterial({color:0x4ade80});
+
+// generate simple terrain
+for(let x=-size;x<size;x++){
+  for(let z=-size;z<size;z++){
+
+    const h = getHeight(x,z);
+
+    for(let y=0;y<=h;y++){
+      const cube = new THREE.Mesh(geo, mat);
+      cube.position.set(x,y,z);
+      scene.add(cube);
+    }
+  }
+}
+
+// ================== MOVEMENT ==================
+
+function updatePlayer(){
+
+  let dx=0,dz=0;
+
+  if(keys["KeyW"]) dz -= 1;
+  if(keys["KeyS"]) dz += 1;
+  if(keys["KeyA"]) dx -= 1;
+  if(keys["KeyD"]) dx += 1;
+
+  const forwardX = -Math.sin(yaw);
+  const forwardZ = -Math.cos(yaw);
+  const rightX = Math.cos(yaw);
+  const rightZ = -Math.sin(yaw);
+
+  player.vel.x += (forwardX*dz + rightX*dx)*0.05;
+  player.vel.z += (forwardZ*dz + rightZ*dx)*0.05;
+
+  player.vel.x *= 0.8;
+  player.vel.z *= 0.8;
+
+  player.vel.y -= 0.01;
+
+  if(keys["Space"] && player.grounded){
+    player.vel.y = 0.2;
+    player.grounded=false;
+  }
+
+  player.pos.add(player.vel);
+
+  let ground = getHeight(player.pos.x,player.pos.z) + 2;
+
+  if(player.pos.y < ground){
+    player.pos.y = ground;
+    player.vel.y = 0;
+    player.grounded=true;
+  }
+}
+
+// ================== LOOP ==================
+
+function loop(){
+  requestAnimationFrame(loop);
+
+  updatePlayer();
+
+  camera.position.copy(player.pos);
+
+  renderer.render(scene,camera);
+}
+
+loop();
+
+// resize
+window.addEventListener("resize",()=>{
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+</script>
+
+</body>
 </html>
+``
