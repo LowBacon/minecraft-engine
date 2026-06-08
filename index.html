@@ -2,9 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Minecraft Lite</title>
+<title>Minecraft Ultra Lite</title>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js
 
 <style>
 body { margin:0; overflow:hidden; background:black; }
@@ -26,127 +26,138 @@ body { margin:0; overflow:hidden; background:black; }
 
 <script>
 
-// ===================== BASIC =====================
+// ================= BASIC =================
 
 const canvas = document.getElementById("game");
-
 const renderer = new THREE.WebGLRenderer({canvas});
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.Fog(0x87CEEB,10,120);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,300);
 
 // lighting
-scene.add(new THREE.AmbientLight(0xffffff,0.7));
-const sun = new THREE.DirectionalLight(0xffffff,1.2);
-sun.position.set(50,100,50);
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+const sun = new THREE.DirectionalLight(0xffffff,1);
+sun.position.set(40,100,40);
 scene.add(sun);
 
-// ===================== PLAYER =====================
+// ================= PLAYER =================
 
 const player = {
-  pos: new THREE.Vector3(0,40,0),
-  vel: new THREE.Vector3(),
-  grounded: false
+  pos:new THREE.Vector3(0,40,0),
+  vel:new THREE.Vector3(),
+  grounded:false
 };
 
 let keys = {};
-let yaw = 0;
-let pitch = 0;
+let yaw=0, pitch=0;
 
 window.addEventListener("keydown",e=>keys[e.code]=true);
 window.addEventListener("keyup",e=>keys[e.code]=false);
 
 // mouse look
-canvas.onclick = () => canvas.requestPointerLock();
+canvas.onclick = ()=>canvas.requestPointerLock();
 
 document.addEventListener("mousemove",e=>{
-  if(document.pointerLockElement !== canvas) return;
-
-  yaw -= e.movementX * 0.002;
-  pitch -= e.movementY * 0.002;
-
-  pitch = Math.max(-1.5, Math.min(1.5,pitch));
+  if(document.pointerLockElement!==canvas) return;
+  yaw -= e.movementX*0.002;
+  pitch -= e.movementY*0.002;
+  pitch = Math.max(-1.5,Math.min(1.5,pitch));
   camera.rotation.set(pitch,yaw,0,"YXZ");
 });
 
-// ===================== TERRAIN =====================
+// ================= TERRAIN =================
 
-function getHeight(x,z){
-  return Math.floor(
-    20 +
-    Math.sin(x*0.1)*5 +
-    Math.cos(z*0.1)*5 +
-    Math.sin((x+z)*0.03)*10
-  );
+function noise(x,z){
+  return Math.sin(x*0.1)+Math.cos(z*0.1)+Math.sin((x+z)*0.03)*2;
 }
 
-// fast instanced mesh
+function getHeight(x,z){
+  return Math.floor(18 + noise(x,z)*5);
+}
+
+// INSTANCED (FAST)
 const geo = new THREE.BoxGeometry(1,1,1);
-const mat = new THREE.MeshLambertMaterial({color:0x4ade80});
 
-const MAX = 20000;
-const mesh = new THREE.InstancedMesh(geo, mat, MAX);
+const matGrass = new THREE.MeshLambertMaterial({color:0x4ade80});
+const matDirt  = new THREE.MeshLambertMaterial({color:0x8B4513});
+const matStone = new THREE.MeshLambertMaterial({color:0x777777});
 
-let i = 0;
-const size = 40;
+const max = 50000;
 
-for(let x=-size; x<size; x++){
-  for(let z=-size; z<size; z++){
+const meshGrass = new THREE.InstancedMesh(geo, matGrass, max);
+const meshDirt  = new THREE.InstancedMesh(geo, matDirt, max);
+const meshStone = new THREE.InstancedMesh(geo, matStone, max);
+
+let ig=0, id=0, is=0;
+
+const size=40;
+
+for(let x=-size;x<size;x++){
+  for(let z=-size;z<size;z++){
 
     const h = getHeight(x,z);
 
-    for(let y=0; y<=h; y++){
+    for(let y=0;y<=h;y++){
 
       const m = new THREE.Matrix4();
       m.setPosition(x,y,z);
 
-      mesh.setMatrixAt(i++, m);
+      if(y===h){
+        meshGrass.setMatrixAt(ig++,m);
+      }
+      else if(y>h-3){
+        meshDirt.setMatrixAt(id++,m);
+      }
+      else{
+        meshStone.setMatrixAt(is++,m);
+      }
     }
   }
 }
 
-mesh.count = i;
-scene.add(mesh);
+meshGrass.count=ig;
+meshDirt.count=id;
+meshStone.count=is;
 
-// ===================== MOVEMENT =====================
+scene.add(meshGrass,meshDirt,meshStone);
 
-function updatePlayer(){
+// ================= MOVEMENT =================
 
-  let dx=0, dz=0;
+function update(){
 
-  if(keys["KeyW"]) dz += 1;
-  if(keys["KeyS"]) dz -= 1;
-  if(keys["KeyA"]) dx -= 1;
-  if(keys["KeyD"]) dx += 1;
+  let dx=0,dz=0;
 
-  const forwardX = Math.sin(yaw);
-  const forwardZ = Math.cos(yaw);
-  const rightX = Math.cos(yaw);
-  const rightZ = -Math.sin(yaw);
+  if(keys["KeyW"]) dz+=1;
+  if(keys["KeyS"]) dz-=1;
+  if(keys["KeyA"]) dx-=1;
+  if(keys["KeyD"]) dx+=1;
+
+  const forwardX=Math.sin(yaw);
+  const forwardZ=Math.cos(yaw);
+  const rightX=Math.cos(yaw);
+  const rightZ=-Math.sin(yaw);
 
   player.vel.x += (forwardX*dz + rightX*dx)*0.04;
   player.vel.z += (forwardZ*dz + rightZ*dx)*0.04;
 
-  // friction
   player.vel.x *= 0.75;
   player.vel.z *= 0.75;
 
-  // gravity
   player.vel.y -= 0.01;
 
-  // jump
   if(keys["Space"] && player.grounded){
-    player.vel.y = 0.22;
-    player.grounded = false;
+    player.vel.y=0.22;
+    player.grounded=false;
   }
 
   player.pos.add(player.vel);
 
-  const ground = getHeight(player.pos.x,player.pos.z) + 2;
+  const ground = getHeight(player.pos.x,player.pos.z)+2;
 
   if(player.pos.y < ground){
     player.pos.y = ground;
@@ -155,18 +166,18 @@ function updatePlayer(){
   }
 }
 
-// ===================== LOOP =====================
+// ================= LOOP =================
 
 function loop(){
   requestAnimationFrame(loop);
 
-  updatePlayer();
+  update();
 
   camera.position.copy(player.pos);
 
   // camera bob
-  if(player.grounded && (Math.abs(player.vel.x)+Math.abs(player.vel.z)>0.01)){
-    camera.position.y += Math.sin(performance.now()*0.01)*0.05;
+  if(player.grounded && Math.abs(player.vel.x)+Math.abs(player.vel.z)>0.02){
+    camera.position.y += Math.sin(performance.now()*0.01)*0.04;
   }
 
   renderer.render(scene,camera);
@@ -175,8 +186,8 @@ function loop(){
 loop();
 
 // resize
-window.addEventListener("resize",()=>{
-  renderer.setSize(innerWidth, innerHeight);
+addEventListener("resize",()=>{
+  renderer.setSize(innerWidth,innerHeight);
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
 });
