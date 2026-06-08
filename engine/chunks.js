@@ -1,70 +1,48 @@
 import * as THREE from "https://unpkg.com/three@0.152.2/build/three.module.js";
 import { getHeight } from "./worldgen.js";
-import { GEO, MATERIALS } from "./blocks.js";
 
-const chunks = new Map();
-const dirty = new Set();
+const geo = new THREE.BoxGeometry(1, 1, 1);
 
-const dummy = new THREE.Object3D();
-const SIZE = 16;
+const grass = new THREE.MeshLambertMaterial({ color: 0x4ade80 });
+const dirt = new THREE.MeshLambertMaterial({ color: 0x92400e });
+const stone = new THREE.MeshLambertMaterial({ color: 0x777777 });
 
-function key(x,z){ return x+","+z; }
+let generated = false;
 
-export function updateChunks(scene,pos){
+export function updateChunks(scene) {
 
-  const cx = Math.floor(pos.x / SIZE);
-  const cz = Math.floor(pos.z / SIZE);
+    if (generated) return;
 
-  for(let dx=-2; dx<=2; dx++){
-    for(let dz=-2; dz<=2; dz++){
+    const size = 40;
 
-      let k = key(cx+dx, cz+dz);
+    const meshG = new THREE.InstancedMesh(geo, grass, 50000);
+    const meshD = new THREE.InstancedMesh(geo, dirt, 50000);
+    const meshS = new THREE.InstancedMesh(geo, stone, 50000);
 
-      if(!chunks.has(k)){
-        let b = generate(cx+dx,cz+dz);
-        let m = build(scene,cx+dx,cz+dz,b);
-        chunks.set(k,{b,m,cx:cx+dx,cz:cz+dz});
-      }
+    let ig = 0, id = 0, is = 0;
+
+    for (let x = -size; x < size; x++) {
+        for (let z = -size; z < size; z++) {
+
+            const h = getHeight(x, z);
+
+            for (let y = 0; y <= h; y++) {
+
+                const m = new THREE.Matrix4();
+                m.setPosition(x, y, z);
+
+                if (y === h) meshG.setMatrixAt(ig++, m);
+                else if (y > h - 3) meshD.setMatrixAt(id++, m);
+                else meshS.setMatrixAt(is++, m);
+            }
+        }
     }
-  }
-}
 
-function generate(cx,cz){
-  let m = new Map();
+    meshG.count = ig;
+    meshD.count = id;
+    meshS.count = is;
 
-  for(let x=0;x<SIZE;x++){
-    for(let z=0;z<SIZE;z++){
+    scene.add(meshG, meshD, meshS);
 
-      let wx = cx*SIZE+x;
-      let wz = cz*SIZE+z;
-      let h = getHeight(wx,wz);
-
-      for(let y=0;y<=h;y++){
-        m.set(`${wx},${y},${wz}`,1);
-      }
-    }
-  }
-  return m;
-}
-
-function build(scene,cx,cz,blocks){
-
-  let mesh = new THREE.InstancedMesh(GEO, MATERIALS[1], blocks.size);
-
-  let i = 0;
-  blocks.forEach((_,k)=>{
-    let [x,y,z] = k.split(",").map(Number);
-    dummy.position.set(x,y,z);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(i++, dummy.matrix);
-  });
-
-  mesh.count = i;
-
-  scene.add(mesh);
-  return mesh;
-}
-
-export function rebuildChunks(scene){
-  dirty.clear();
+    generated = true;
 }
