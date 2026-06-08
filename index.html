@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Neo-Grid Ultra: Definitive Cyberpunk Edition</title>
+  <title>Neo-Grid Ultra: Ultimate Definitive Edition</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -173,7 +173,7 @@
       <div class="bg-slate-950/95 border border-slate-800 rounded-xl p-3 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden">
         <div class="w-full flex justify-between items-center px-1 mb-2">
           <span class="text-[10px] text-pink-500 tracking-widest uppercase font-bold font-mono">AUDIO WAVEFORM</span>
-          <i data-lucide="audio-lines" class="w-3.5 h-3.5 text-pink-500 animate-pulse"></i>
+          <i id="visualizer-toggle-mode" data-lucide="audio-lines" class="w-3.5 h-3.5 text-pink-500 animate-pulse cursor-pointer hover:text-white transition" title="Toggle Visualizer Mode"></i>
         </div>
         <!-- Live Waveform Oscilloscope Canvas -->
         <div class="w-full h-16 bg-slate-900/90 rounded-lg border border-slate-800/80 overflow-hidden relative">
@@ -206,7 +206,7 @@
     </div>
 
     <!-- CENTER PANEL: Interactive Matrix Grid System -->
-    <div class="flex-1 flex flex-col items-center justify-center relative w-full h-full max-h-[60vh] lg:max-h-[74vh]">
+    <div class="flex-1 flex flex-col items-center justify-center relative w-full h-full max-h-[58vh] lg:max-h-[74vh]">
       <!-- AI Coach Advice Floating Banner -->
       <div id="coach-banner" class="w-full max-w-[340px] mb-1.5 bg-indigo-950/35 border border-indigo-500/20 rounded-lg py-1 px-3 flex items-center justify-between text-[11px] font-mono text-indigo-300 backdrop-blur-sm shadow-md transition-all duration-300 translate-y-2 opacity-0">
         <div class="flex items-center space-x-1.5">
@@ -216,11 +216,33 @@
         <span id="coach-advice-text" class="text-cyan-400 font-bold font-mono">CALCULATING...</span>
       </div>
 
-      <!-- Overlays (Pause, Gameover, Settings, Challenges panels) -->
+      <!-- Overlays (Pause, Gameover, Settings, Challenges, Onboarding panels) -->
       <div class="absolute inset-x-2 lg:inset-x-0 inset-y-0 z-30 flex items-center justify-center pointer-events-none">
         
+        <!-- Pilot Onboarding codename selector overlay -->
+        <div id="pilot-registration-overlay" class="absolute bg-slate-950/98 backdrop-blur-2xl rounded-2xl flex flex-col items-center justify-center p-6 text-center max-w-[420px] w-full border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)] transition-all duration-300 pointer-events-auto">
+          <div class="mb-5 relative">
+            <div class="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 opacity-70 blur animate-pulse"></div>
+            <div class="relative bg-slate-950 p-4 rounded-full border border-slate-800">
+              <i data-lucide="user-cog" class="w-10 h-10 text-cyan-400"></i>
+            </div>
+          </div>
+          <h2 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-pink-500 retro-font mb-2">PILOT REGISTRATION</h2>
+          <p class="text-xs text-slate-400 mb-6 font-mono leading-relaxed">System initialized. Input your Cyber Pilot Codename to synchronize quantum coordinates with the simulation grid.</p>
+          
+          <div class="w-full mb-6 relative">
+            <input id="pilot-codename-input" type="text" maxlength="15" placeholder="PILOT_CODENAME" class="w-full bg-slate-900/90 border border-slate-800 focus:border-cyan-500/80 rounded-xl py-3 px-4 text-center font-mono text-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/35 uppercase tracking-widest placeholder-slate-600 text-sm">
+            <div class="absolute right-3.5 top-3 text-[10px] text-slate-600 font-mono">CODE</div>
+          </div>
+
+          <button id="btn-save-pilot" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center space-x-2 text-sm retro-font">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>INITIALIZE MATRIX LINK</span>
+          </button>
+        </div>
+
         <!-- Main Game Over & Game Start Hub -->
-        <div id="game-overlay" class="absolute bg-slate-950/98 backdrop-blur-xl rounded-2xl flex flex-col items-center justify-center p-6 text-center max-w-[420px] w-full border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.15)] transition-all duration-300 pointer-events-auto">
+        <div id="game-overlay" class="absolute hidden bg-slate-950/98 backdrop-blur-xl rounded-2xl flex flex-col items-center justify-center p-6 text-center max-w-[420px] w-full border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.15)] transition-all duration-300 pointer-events-auto">
           <div class="mb-5 relative">
             <div class="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 opacity-70 blur animate-pulse"></div>
             <div class="relative bg-slate-950 p-4 rounded-full border border-slate-800">
@@ -233,15 +255,16 @@
           <!-- Diagnostics Report Card inside Gameover -->
           <div id="game-stats-review" class="hidden w-full bg-slate-900/50 border border-slate-800 rounded-lg p-3.5 mb-6 text-left space-y-2 text-[11px] font-mono">
             <div class="text-[10px] text-slate-500 uppercase tracking-widest border-b border-slate-800/80 pb-1 font-bold">DIAGNOSTIC TRANSMISSION DATA</div>
+            <div class="flex justify-between"><span>PILOT IDENT:</span><span id="final-pilot-id" class="text-purple-400 font-bold font-mono">PILOT_A</span></div>
             <div class="flex justify-between"><span>PROCESSED BYTEPACKS:</span><span id="final-score" class="text-cyan-400 font-bold font-mono">0 GB</span></div>
             <div class="flex justify-between"><span>CLEARED DEBRIS:</span><span id="final-lines" class="text-emerald-400 font-bold font-mono">0</span></div>
             <div class="flex justify-between"><span>DIVE SECTOR DEPTH:</span><span id="final-level" class="text-pink-400 font-bold font-mono">0</span></div>
             <div class="flex justify-between"><span>T-SPIN MATRIX DECAYS:</span><span id="final-tspins" class="text-amber-400 font-bold font-mono">0</span></div>
-            <div class="flex justify-between"><span>SYSTEM APM PEAK:</span><span id="final-apm" class="text-purple-400 font-bold font-mono">0</span></div>
+            <div class="flex justify-between"><span>SYNAPSE RECORD DURATION:</span><span id="final-time" class="text-cyan-300 font-bold font-mono">00:00</span></div>
           </div>
 
           <!-- Quick Actions -->
-          <button id="btn-start" class="w-full py-4 bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-600 hover:from-cyan-400 hover:to-pink-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center space-x-2 text-sm retro-font mb-3">
+          <button id="btn-start" class="w-full py-4 bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center space-x-2 text-sm retro-font mb-3">
             <i data-lucide="power" class="w-4 h-4"></i>
             <span id="start-btn-label">LAUNCH MATRIX LINK</span>
           </button>
@@ -315,6 +338,41 @@
                 <!-- Injected via JS -->
               </div>
             </div>
+
+            <!-- 4. Autopilot AI Heuristics Tuner -->
+            <div>
+              <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest block mb-2 font-mono">DEVELOPER AI TUNING PANEL</span>
+              <div class="space-y-3 bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-[11px]">
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                    <span>HEIGHT PENALTY WEIGHT</span>
+                    <span id="ai-weight-height-disp">-0.51</span>
+                  </div>
+                  <input id="slider-ai-height" type="range" min="-100" max="0" value="-51" class="w-full accent-cyan-500 bg-slate-950 h-1 rounded-lg cursor-pointer">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                    <span>HOLE PENALTY WEIGHT</span>
+                    <span id="ai-weight-holes-disp">-0.35</span>
+                  </div>
+                  <input id="slider-ai-holes" type="range" min="-100" max="0" value="-35" class="w-full accent-pink-500 bg-slate-950 h-1 rounded-lg cursor-pointer">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                    <span>ROUGHNESS PENALTY WEIGHT</span>
+                    <span id="ai-weight-roughness-disp">-0.18</span>
+                  </div>
+                  <input id="slider-ai-roughness" type="range" min="-100" max="0" value="-18" class="w-full accent-amber-500 bg-slate-950 h-1 rounded-lg cursor-pointer">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                    <span>LINE CLEAR BONUS WEIGHT</span>
+                    <span id="ai-weight-clears-disp">0.76</span>
+                  </div>
+                  <input id="slider-ai-clears" type="range" min="0" max="100" value="76" class="w-full accent-emerald-500 bg-slate-950 h-1 rounded-lg cursor-pointer">
+                </div>
+              </div>
+            </div>
           </div>
           
           <button id="btn-save-settings" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 text-slate-300 font-bold rounded-lg transition-all text-xs font-mono tracking-widest uppercase mt-3">
@@ -337,8 +395,8 @@
       </div>
     </div>
 
-    <!-- RIGHT PANEL: Telemetry readout, Next Stream Blocks -->
-    <div class="flex flex-col gap-3.5 w-full lg:w-56 flex-shrink-0 px-2 lg:px-0">
+    <!-- RIGHT PANEL: Telemetry readout, Next Stream Blocks, Dynamic Leaderboard -->
+    <div class="flex flex-col gap-3.5 w-full lg:w-64 flex-shrink-0 px-2 lg:px-0">
       
       <!-- Primary Core Statistics Block (Always visible) -->
       <div class="grid grid-cols-4 lg:grid-cols-1 gap-2 bg-slate-950/95 border border-slate-800 rounded-xl p-3 md:p-4 backdrop-blur-md font-mono relative overflow-hidden neon-glow-pink">
@@ -362,6 +420,18 @@
         <div class="flex flex-col items-center lg:items-start justify-center border-l lg:border-l-0 lg:border-t border-slate-800/60 lg:pt-2">
           <span class="text-[9px] text-slate-500 uppercase tracking-widest font-mono">DECAYED_LINES</span>
           <span id="lines-val" class="text-base md:text-xl font-bold text-amber-400 font-mono">000</span>
+        </div>
+      </div>
+
+      <!-- Advanced Leaderboard Panel -->
+      <div class="bg-slate-950/95 border border-slate-800 rounded-xl p-3 flex flex-col font-mono text-xs relative overflow-hidden h-[185px]">
+        <div class="absolute -top-10 -left-10 w-20 h-20 bg-indigo-500/5 rounded-full blur-xl"></div>
+        <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-slate-900">
+          <span class="text-[10px] text-indigo-400 tracking-widest uppercase font-bold font-mono">GLOBAL APEX LEADERBOARD</span>
+          <i data-lucide="crown" class="w-3.5 h-3.5 text-indigo-400"></i>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-1 pr-1 text-[10px]" id="leaderboard-container-list">
+          <!-- Injected dynamically via Leaderboard manager class -->
         </div>
       </div>
 
@@ -947,6 +1017,100 @@
     };
 
     // ==========================================
+    // ============ LEADERBOARD ENGINE ==========
+    // ==========================================
+
+    class LeaderboardManager {
+      constructor() {
+        this.storageKey = "quantum_tetris_leaders";
+        this.leaders = [];
+        this.initLeaderboard();
+      }
+
+      initLeaderboard() {
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) {
+          try {
+            this.leaders = JSON.parse(stored);
+          } catch(e) {
+            this.loadDefaultLeaders();
+          }
+        } else {
+          this.loadDefaultLeaders();
+        }
+        this.sortAndSave();
+      }
+
+      loadDefaultLeaders() {
+        // High fidelity simulated records to challenge the pilot immediately
+        this.leaders = [
+          { name: "SPECTRE_X", score: 250000, lines: 180, time: "12:45" },
+          { name: "SORA_NET", score: 185000, lines: 120, time: "09:12" },
+          { name: "TOKYO_GHOST", score: 140000, lines: 95, time: "07:30" },
+          { name: "NEO_KID", score: 98000, lines: 60, time: "05:15" },
+          { name: "GRID_SURFER", score: 72000, lines: 45, time: "04:10" }
+        ];
+      }
+
+      recordAttempt(pilotName, score, lines, durationFormatted) {
+        if (!pilotName) return;
+        const cleanName = pilotName.toUpperCase().trim();
+        
+        // Find existing record to overwrite if better, or add new record
+        const existingIdx = this.leaders.findIndex(l => l.name === cleanName);
+        if (existingIdx !== -1) {
+          if (score > this.leaders[existingIdx].score) {
+            this.leaders[existingIdx] = { name: cleanName, score, lines, time: durationFormatted };
+          }
+        } else {
+          this.leaders.push({ name: cleanName, score, lines, time: durationFormatted });
+        }
+        
+        this.sortAndSave();
+        this.render();
+      }
+
+      sortAndSave() {
+        // Sort descending by score
+        this.leaders.sort((a, b) => b.score - a.score);
+        // Truncate to top 10
+        if (this.leaders.length > 10) {
+          this.leaders = this.leaders.slice(0, 10);
+        }
+        localStorage.setItem(this.storageKey, JSON.stringify(this.leaders));
+      }
+
+      render() {
+        const container = document.getElementById('leaderboard-container-list');
+        if (!container) return;
+
+        container.innerHTML = "";
+        this.leaders.forEach((pilot, idx) => {
+          const row = document.createElement('div');
+          // Highlight first place or current pilot
+          const isTop = idx === 0;
+          const bgClass = isTop ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-slate-900/30 border-slate-900';
+          const medalColor = isTop ? 'text-amber-400' : 'text-slate-500';
+
+          row.className = `flex justify-between items-center px-2 py-1.5 rounded border ${bgClass} transition hover:bg-slate-900/50`;
+          row.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <span class="w-4 font-bold ${medalColor}">${idx + 1}.</span>
+              <span class="font-bold text-slate-300 truncate max-w-[85px] uppercase" title="${pilot.name}">${pilot.name}</span>
+            </div>
+            <div class="flex items-center space-x-3 text-right">
+              <span class="text-cyan-400 font-bold">${pilot.score.toLocaleString()}</span>
+              <span class="text-[8px] text-slate-500 font-mono">${pilot.time}</span>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+    }
+
+    const leaderboard = new LeaderboardManager();
+
+    // ==========================================
     // ============ ENTITY CLASSES ==============
     // ==========================================
 
@@ -1018,172 +1182,6 @@
     }
 
     // ==========================================
-    // ============ AI ENGINE SOLVER ============
-    // ==========================================
-
-    class TetrisHeuristics {
-      constructor() {
-        // AI Tuning parameters for maximum survival and line scoring
-        this.aHeight = -0.51;
-        this.aHoles = -0.35;
-        this.aRoughness = -0.18;
-        this.aClears = 0.76;
-      }
-
-      /**
-       * Calculates best possible placement using heuristic evaluation algorithms
-       */
-      findBestMove(grid, piece, holdPieceType) {
-        let bestScore = -1000000;
-        let bestMove = null; // { x, rotations, hold: boolean }
-
-        // 1. Try with Current Piece
-        const currentOptions = this.evaluateAllOrientations(grid, piece, false);
-        currentOptions.forEach(opt => {
-          if (opt.score > bestScore) {
-            bestScore = opt.score;
-            bestMove = opt;
-          }
-        });
-
-        // 2. Try with Hold Piece Type
-        if (holdPieceType) {
-          const testPiece = new Piece(holdPieceType);
-          const holdOptions = this.evaluateAllOrientations(grid, testPiece, true);
-          holdOptions.forEach(opt => {
-            if (opt.score > bestScore) {
-              bestScore = opt.score;
-              bestMove = opt;
-            }
-          });
-        }
-
-        return bestMove;
-      }
-
-      evaluateAllOrientations(grid, piece, useHold) {
-        const options = [];
-        const originalMatrix = JSON.parse(JSON.stringify(piece.matrix));
-        
-        // Loop through all 4 possible rotations
-        for (let rot = 0; rot < 4; rot++) {
-          const tempPiece = new Piece(piece.type);
-          for (let r = 0; r < rot; r++) {
-            tempPiece.rotate();
-          }
-
-          // Gather range of possible horizontal shifts
-          let minX = -3;
-          let maxX = COLS + 3;
-
-          for (let x = minX; x < maxX; x++) {
-            // Check if position is valid
-            if (!this.checkCollision(grid, x, tempPiece.y, tempPiece.matrix)) {
-              // Find drop position
-              let dropY = tempPiece.y;
-              while (!this.checkCollision(grid, x, dropY + 1, tempPiece.matrix)) {
-                dropY++;
-              }
-
-              // Simulate landing and evaluate
-              const score = this.simulateAndScore(grid, x, dropY, tempPiece.matrix);
-              options.push({
-                x: x,
-                rotations: rot,
-                hold: useHold,
-                score: score,
-                targetY: dropY
-              });
-            }
-          }
-        }
-
-        return options;
-      }
-
-      checkCollision(grid, px, py, matrix) {
-        for (let r = 0; r < matrix.length; r++) {
-          for (let c = 0; c < matrix[r].length; c++) {
-            if (matrix[r][c] !== 0) {
-              const gridX = px + c;
-              const gridY = py + r;
-              if (gridX < 0 || gridX >= COLS || gridY >= ROWS) {
-                return true;
-              }
-              if (gridY >= 0 && grid[gridY][gridX] !== 0) {
-                return true;
-              }
-            }
-          }
-        }
-        return false;
-      }
-
-      simulateAndScore(grid, px, py, matrix) {
-        // 1. Clone Grid
-        const clone = grid.map(row => [...row]);
-
-        // 2. Place piece
-        for (let r = 0; r < matrix.length; r++) {
-          for (let c = 0; c < matrix[r].length; c++) {
-            if (matrix[r][c] !== 0) {
-              const gy = py + r;
-              const gx = px + c;
-              if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
-                clone[gy][gx] = 1;
-              }
-            }
-          }
-        }
-
-        // 3. Count complete line clears
-        let linesCleared = 0;
-        for (let r = 0; r < ROWS; r++) {
-          if (clone[r].every(val => val !== 0)) {
-            linesCleared++;
-          }
-        }
-
-        // 4. Calculate Column Heights and Holes
-        const heights = Array(COLS).fill(0);
-        let holes = 0;
-
-        for (let c = 0; c < COLS; c++) {
-          let foundBlock = false;
-          for (let r = 0; r < ROWS; r++) {
-            if (clone[r][c] !== 0) {
-              if (!foundBlock) {
-                heights[c] = ROWS - r;
-                foundBlock = true;
-              }
-            } else if (foundBlock) {
-              // Hole found! Empty cell below a solid block
-              holes++;
-            }
-          }
-        }
-
-        const totalHeight = heights.reduce((sum, h) => sum + h, 0);
-
-        // 5. Calculate board roughness (absolute difference between adjacent column heights)
-        let roughness = 0;
-        for (let c = 0; c < COLS - 1; c++) {
-          roughness += Math.abs(heights[c] - heights[c + 1]);
-        }
-
-        // 6. Mathematical Heuristic Scoring
-        const score = (totalHeight * this.aHeight) +
-                      (holes * this.aHoles) +
-                      (roughness * this.aRoughness) +
-                      (linesCleared * this.aClears);
-
-        return score;
-      }
-    }
-
-    const aiSolver = new TetrisHeuristics();
-
-    // ==========================================
     // ============ MAIN GAME CLASS ==============
     // ==========================================
 
@@ -1193,6 +1191,7 @@
         this.ctx = this.canvas.getContext('2d');
         this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
         
+        this.pilotName = "";
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('tetris_ultra_high_score')) || 0;
         this.level = 1;
@@ -1212,6 +1211,7 @@
         this.dropCounter = 0;
         this.dropInterval = 1000;
         this.lastTime = 0;
+        this.totalSyncTime = 0; // Synapse clock time tracker
 
         // Feedback particles & shake system
         this.particles = [];
@@ -1248,6 +1248,7 @@
 
         // Themes Configuration
         this.activeTheme = THEMES_DATABASE['neon-tokyo'];
+        this.visualizerMode = 0; // 0=Waveform, 1=Spectrum, 2=Circular Orb
 
         // Control Keys Settings Database
         this.keybinds = {
@@ -1313,6 +1314,13 @@
         }
       }
 
+      getFormattedSyncTime() {
+        const secs = Math.floor(this.totalSyncTime / 1000);
+        const m = String(Math.floor(secs / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
       start() {
         this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
         
@@ -1346,6 +1354,7 @@
         this.apmTimer = 0;
         this.piecesPlacedCount = 0;
         this.autopilotDelayCounter = 0;
+        this.totalSyncTime = 0;
 
         for (let i = 0; i < 4; i++) {
           this.refillQueue();
@@ -1396,6 +1405,10 @@
           sfx.playSFX('gameover');
           sfx.stopBGM();
           this.updateHighScore();
+          
+          // Commit results to leaderboards on failure
+          leaderboard.recordAttempt(this.pilotName, this.score, this.lines, this.getFormattedSyncTime());
+          
           showOverlay(true, "GRID CRASH", "Telemetry buffer overflow! Connection terminated.", true);
         }
 
@@ -1670,6 +1683,9 @@
           this.started = false;
           sfx.playSFX('gameover');
           sfx.stopBGM();
+          
+          leaderboard.recordAttempt(this.pilotName, this.score, this.lines, this.getFormattedSyncTime());
+          
           showOverlay(true, "CORE MELTDOWN", "Reactor temperature breached 90°C critical limit!", true);
           return;
         }
@@ -2165,6 +2181,9 @@
       }
 
       updateLiveTelemetry(delta) {
+        // Update live total Synapse synchronization duration clock
+        this.totalSyncTime += delta;
+
         // Calculate stack stability
         let highestRow = ROWS;
         for (let r = 0; r < ROWS; r++) {
@@ -2279,6 +2298,9 @@
         const statsReview = document.getElementById('game-stats-review');
         if (showStats && statsReview) {
           statsReview.classList.remove('hidden');
+          
+          const finalPilotId = document.getElementById('final-pilot-id');
+          if (finalPilotId) finalPilotId.innerText = gameInst.pilotName.toUpperCase();
           const finalScore = document.getElementById('final-score');
           if (finalScore) finalScore.innerText = `${gameInst.score} DATA`;
           const finalLines = document.getElementById('final-lines');
@@ -2287,6 +2309,9 @@
           if (finalLevel) finalLevel.innerText = `SECTOR_${String(gameInst.level).padStart(2, '0')}`;
           const finalTspins = document.getElementById('final-tspins');
           if (finalTspins) finalTspins.innerText = gameInst.tspinsCount;
+          
+          const finalTime = document.getElementById('final-time');
+          if (finalTime) finalTime.innerText = gameInst.getFormattedSyncTime();
           
           const valApm = document.getElementById('val-apm');
           const apmPeak = valApm ? valApm.innerText : '0';
@@ -2327,30 +2352,67 @@
 
         const bufferLength = sfx.analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
-        sfx.analyser.getByteTimeDomainData(dataArray);
 
-        vCtx.lineWidth = 2;
-        vCtx.strokeStyle = '#06b6d4';
-        vCtx.beginPath();
+        if (gameInst && gameInst.visualizerMode === 0) {
+          // 0 = Waveform Oscilloscope Mode
+          sfx.analyser.getByteTimeDomainData(dataArray);
+          vCtx.lineWidth = 2;
+          vCtx.strokeStyle = '#06b6d4';
+          vCtx.beginPath();
 
-        const sliceWidth = visualizerCanvas.width * 1.0 / bufferLength;
-        let x = 0;
+          const sliceWidth = visualizerCanvas.width * 1.0 / bufferLength;
+          let x = 0;
 
-        for (let i = 0; i < bufferLength; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = v * visualizerCanvas.height / 2;
+          for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * visualizerCanvas.height / 2;
 
-          if (i === 0) {
-            vCtx.moveTo(x, y);
-          } else {
-            vCtx.lineTo(x, y);
+            if (i === 0) {
+              vCtx.moveTo(x, y);
+            } else {
+              vCtx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
           }
+          vCtx.lineTo(visualizerCanvas.width, visualizerCanvas.height / 2);
+          vCtx.stroke();
+        } else if (gameInst && gameInst.visualizerMode === 1) {
+          // 1 = Frequency Spectrum Bars Mode
+          sfx.analyser.getByteFrequencyData(dataArray);
+          const barWidth = (visualizerCanvas.width / bufferLength) * 1.5;
+          let x = 0;
 
-          x += sliceWidth;
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * visualizerCanvas.height;
+            // Draw dual color gradient bars
+            vCtx.fillStyle = `hsl(${200 + (i * 2)}, 80%, 50%)`;
+            vCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth - 1, barHeight);
+            x += barWidth;
+          }
+        } else {
+          // 2 = Circular Pulse Orb Mode
+          sfx.analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+          const avg = sum / bufferLength;
+          const radius = Math.min(25, 10 + (avg / 255) * 20);
+
+          vCtx.save();
+          vCtx.translate(visualizerCanvas.width / 2, visualizerCanvas.height / 2);
+          
+          // Draw pulsing orb
+          const orbGrad = vCtx.createRadialGradient(0, 0, 1, 0, 0, radius);
+          orbGrad.addColorStop(0, '#ffffff');
+          orbGrad.addColorStop(0.3, 'rgba(6, 182, 212, 0.8)');
+          orbGrad.addColorStop(1, 'rgba(236, 72, 153, 0)');
+          
+          vCtx.fillStyle = orbGrad;
+          vCtx.beginPath();
+          vCtx.arc(0, 0, radius, 0, Math.PI * 2);
+          vCtx.fill();
+          vCtx.restore();
         }
-
-        vCtx.lineTo(visualizerCanvas.width, visualizerCanvas.height / 2);
-        vCtx.stroke();
       }
 
       drawVis();
@@ -2442,6 +2504,65 @@
       setupInteractivePanels();
       gameInst.renderModifiersChecklist();
       runAudioVisualizerLoop();
+      leaderboard.render();
+
+      // Pilot Onboarding flow link
+      const btnSavePilot = document.getElementById('btn-save-pilot');
+      const pilotInput = document.getElementById('pilot-codename-input');
+      const pilotRegOverlay = document.getElementById('pilot-registration-overlay');
+      if (btnSavePilot && pilotInput && pilotRegOverlay) {
+        btnSavePilot.addEventListener('click', () => {
+          let name = pilotInput.value.trim().toUpperCase();
+          if (!name) name = "PILOT_A";
+          gameInst.pilotName = name;
+          pilotRegOverlay.classList.add('hidden');
+          sfx.playSFX('clear');
+          showOverlay(true, "SYSTEM READY", "Neural coordinate system sync complete. Proceed to link.", false);
+        });
+      }
+
+      // Visualizer Mode interactive switcher
+      const visModeBtn = document.getElementById('visualizer-toggle-mode');
+      if (visModeBtn) {
+        visModeBtn.addEventListener('click', () => {
+          gameInst.visualizerMode = (gameInst.visualizerMode + 1) % 3;
+          sfx.playSFX('move');
+        });
+      }
+
+      // Live Heuristics Weights sliders
+      const sliderHeight = document.getElementById('slider-ai-height');
+      if (sliderHeight) {
+        sliderHeight.addEventListener('input', (e) => {
+          const val = Number(e.target.value) / 100;
+          aiSolver.aHeight = val;
+          document.getElementById('ai-weight-height-disp').innerText = val.toFixed(2);
+        });
+      }
+      const sliderHoles = document.getElementById('slider-ai-holes');
+      if (sliderHoles) {
+        sliderHoles.addEventListener('input', (e) => {
+          const val = Number(e.target.value) / 100;
+          aiSolver.aHoles = val;
+          document.getElementById('ai-weight-holes-disp').innerText = val.toFixed(2);
+        });
+      }
+      const sliderRoughness = document.getElementById('slider-ai-roughness');
+      if (sliderRoughness) {
+        sliderRoughness.addEventListener('input', (e) => {
+          const val = Number(e.target.value) / 100;
+          aiSolver.aRoughness = val;
+          document.getElementById('ai-weight-roughness-disp').innerText = val.toFixed(2);
+        });
+      }
+      const sliderClears = document.getElementById('slider-ai-clears');
+      if (sliderClears) {
+        sliderClears.addEventListener('input', (e) => {
+          const val = Number(e.target.value) / 100;
+          aiSolver.aClears = val;
+          document.getElementById('ai-weight-clears-disp').innerText = val.toFixed(2);
+        });
+      }
 
       // Start / Action buttons links
       const btnStart = document.getElementById('btn-start');
