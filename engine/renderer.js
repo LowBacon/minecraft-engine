@@ -1,25 +1,33 @@
 import * as THREE from "https://unpkg.com/three@0.152.2/build/three.module.js";
 
-export function initRenderer(){
+export function initRenderer() {
 
-  const canvas = document.getElementById("game");
+    const canvas = document.getElementById("game");
 
-  const renderer = new THREE.WebGLRenderer({canvas});
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    const renderer = new THREE.WebGLRenderer({ canvas });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87CEEB);
-  scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
+    const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 300);
+    // ✅ better background
+    scene.background = new THREE.Color(0x87CEEB);
 
-  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+    // ✅ FIXED fog (not white screen)
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.006);
 
-  const sun = new THREE.DirectionalLight(0xffffff,1.2);
-  sun.position.set(50,100,50);
-  scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        300
+    );
 
-  return {scene,camera,renderer};
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(50, 100, 50);
+    scene.add(sun);
+
+    return { scene, camera, renderer };
 }
-``
