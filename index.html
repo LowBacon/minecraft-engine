@@ -2,59 +2,185 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Three Test</title>
+<title>Minecraft Lite</title>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
-body { margin:0; overflow:hidden; }
+body { margin:0; overflow:hidden; background:black; }
+
+#crosshair {
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  color:white;
+  font-size:20px;
+}
 </style>
 </head>
 
 <body>
 
+<div id="crosshair">+</div>
 <canvas id="game"></canvas>
 
 <script>
-console.log("SCRIPT RUNNING ✅");
 
-// ===== BASIC THREE SETUP =====
+// ===================== BASIC =====================
+
 const canvas = document.getElementById("game");
 
 const renderer = new THREE.WebGLRenderer({canvas});
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000); // BLACK so it's obvious
+scene.background = new THREE.Color(0x87CEEB);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 500);
 
-// ===== LIGHT =====
-const light = new THREE.PointLight(0xffffff, 1);
-light.position.set(5,5,5);
-scene.add(light);
+// lighting
+scene.add(new THREE.AmbientLight(0xffffff,0.7));
+const sun = new THREE.DirectionalLight(0xffffff,1.2);
+sun.position.set(50,100,50);
+scene.add(sun);
 
-// ===== BIG CUBE =====
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(5,5,5),
-  new THREE.MeshBasicMaterial({color:0xff0000}) // RED
-);
+// ===================== PLAYER =====================
 
-scene.add(cube);
+const player = {
+  pos: new THREE.Vector3(0,40,0),
+  vel: new THREE.Vector3(),
+  grounded: false
+};
 
-// ===== CAMERA POSITION =====
-camera.position.set(0, 0, 10);
+let keys = {};
+let yaw = 0;
+let pitch = 0;
 
-// ===== RENDER LOOP =====
+window.addEventListener("keydown",e=>keys[e.code]=true);
+window.addEventListener("keyup",e=>keys[e.code]=false);
+
+// mouse look
+canvas.onclick = () => canvas.requestPointerLock();
+
+document.addEventListener("mousemove",e=>{
+  if(document.pointerLockElement !== canvas) return;
+
+  yaw -= e.movementX * 0.002;
+  pitch -= e.movementY * 0.002;
+
+  pitch = Math.max(-1.5, Math.min(1.5,pitch));
+  camera.rotation.set(pitch,yaw,0,"YXZ");
+});
+
+// ===================== TERRAIN =====================
+
+function getHeight(x,z){
+  return Math.floor(
+    20 +
+    Math.sin(x*0.1)*5 +
+    Math.cos(z*0.1)*5 +
+    Math.sin((x+z)*0.03)*10
+  );
+}
+
+// fast instanced mesh
+const geo = new THREE.BoxGeometry(1,1,1);
+const mat = new THREE.MeshLambertMaterial({color:0x4ade80});
+
+const MAX = 20000;
+const mesh = new THREE.InstancedMesh(geo, mat, MAX);
+
+let i = 0;
+const size = 40;
+
+for(let x=-size; x<size; x++){
+  for(let z=-size; z<size; z++){
+
+    const h = getHeight(x,z);
+
+    for(let y=0; y<=h; y++){
+
+      const m = new THREE.Matrix4();
+      m.setPosition(x,y,z);
+
+      mesh.setMatrixAt(i++, m);
+    }
+  }
+}
+
+mesh.count = i;
+scene.add(mesh);
+
+// ===================== MOVEMENT =====================
+
+function updatePlayer(){
+
+  let dx=0, dz=0;
+
+  if(keys["KeyW"]) dz += 1;
+  if(keys["KeyS"]) dz -= 1;
+  if(keys["KeyA"]) dx -= 1;
+  if(keys["KeyD"]) dx += 1;
+
+  const forwardX = Math.sin(yaw);
+  const forwardZ = Math.cos(yaw);
+  const rightX = Math.cos(yaw);
+  const rightZ = -Math.sin(yaw);
+
+  player.vel.x += (forwardX*dz + rightX*dx)*0.04;
+  player.vel.z += (forwardZ*dz + rightZ*dx)*0.04;
+
+  // friction
+  player.vel.x *= 0.75;
+  player.vel.z *= 0.75;
+
+  // gravity
+  player.vel.y -= 0.01;
+
+  // jump
+  if(keys["Space"] && player.grounded){
+    player.vel.y = 0.22;
+    player.grounded = false;
+  }
+
+  player.pos.add(player.vel);
+
+  const ground = getHeight(player.pos.x,player.pos.z) + 2;
+
+  if(player.pos.y < ground){
+    player.pos.y = ground;
+    player.vel.y = 0;
+    player.grounded = true;
+  }
+}
+
+// ===================== LOOP =====================
+
 function loop(){
   requestAnimationFrame(loop);
 
-  cube.rotation.y += 0.01; // animate so you know it's alive
+  updatePlayer();
 
-  renderer.render(scene, camera);
+  camera.position.copy(player.pos);
+
+  // camera bob
+  if(player.grounded && (Math.abs(player.vel.x)+Math.abs(player.vel.z)>0.01)){
+    camera.position.y += Math.sin(performance.now()*0.01)*0.05;
+  }
+
+  renderer.render(scene,camera);
 }
 
 loop();
+
+// resize
+window.addEventListener("resize",()=>{
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+
 </script>
 
 </body>
